@@ -1,6 +1,4 @@
 from fastapi.testclient import TestClient
-from sqlmodel import Session
-
 from app.models.user import User, Role
 
 def test_read_me(client: TestClient, user_token: str):

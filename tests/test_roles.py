@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 
 from app.models.user import User, Role
 
@@ -48,7 +48,7 @@ def test_read_role_as_admin(client: TestClient, admin_token: str, test_role: Rol
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["id"] == str(test_role.id)
+    assert data["id"] == test_role.id
     assert data["name"] == "testrole"
 
 def test_update_role_as_admin(client: TestClient, admin_token: str, test_role: Role):

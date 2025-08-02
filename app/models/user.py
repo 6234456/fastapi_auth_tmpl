@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from app.models.base import Base, user_role_link, UUID
+from app.models.base import Base, user_role_link
 
 class Role(Base):
     __tablename__ = "roles"
