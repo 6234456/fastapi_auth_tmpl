@@ -1,17 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 from typing import Any
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from jose import jwt, JWTError
 
 from app.core.security import create_access_token, create_refresh_token
-from app.core.permissions import oauth2_scheme
 from app.schemas.auth import Token, TokenPayload, LoginRequest, RefreshRequest
 from app.schemas.user import UserCreate, UserRead
 from app.database import get_session
 from app.crud.user import authenticate_user, create_user, get_user_by_email, get_user_by_username
-from app.config import settings
+from app.config.settings import settings
 
 router = APIRouter()
 
@@ -67,7 +66,7 @@ async def refresh_token(refresh_req: RefreshRequest, db: Session = Depends(get_s
             raise credentials_exception
 
         # 检查令牌是否过期
-        if datetime.fromtimestamp(token_data.exp) < datetime.utcnow():
+        if datetime.fromtimestamp(token_data.exp, tz=timezone.utc) < datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="刷新令牌已过期",

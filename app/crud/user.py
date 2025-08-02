@@ -1,27 +1,31 @@
-from sqlmodel import Session, select
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 from typing import List, Optional, Dict, Any, Union
-import uuid
 
 from app.models.user import User, Role, UserRoleLink
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash, verify_password
 
 # 用户相关CRUD操作
-def get_user(db: Session, user_id: uuid.UUID) -> Optional[User]:
+def get_user(db: Session, user_id: int) -> Optional[User]:
     """根据ID获取用户"""
-    return db.exec(select(User).where(User.id == user_id)).first()
+    result = db.execute(select(User).where(User.id == user_id))
+    return result.scalars().first()
 
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
     """根据邮箱获取用户"""
-    return db.exec(select(User).where(User.email == email)).first()
+    result = db.execute(select(User).where(User.email == email))
+    return result.scalars().first()
 
 def get_user_by_username(db: Session, username: str) -> Optional[User]:
     """根据用户名获取用户"""
-    return db.exec(select(User).where(User.username == username)).first()
+    result = db.execute(select(User).where(User.username == username))
+    return result.scalars().first()
 
 def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
     """获取用户列表"""
-    return db.exec(select(User).offset(skip).limit(limit)).all()
+    result = db.execute(select(User).offset(skip).limit(limit))
+    return result.scalars().all()
 
 def create_user(db: Session, user_create: UserCreate) -> User:
     """创建新用户"""
@@ -40,7 +44,7 @@ def create_user(db: Session, user_create: UserCreate) -> User:
 
     return db_user
 
-def update_user(db: Session, user_id: uuid.UUID, user_update: UserUpdate) -> Optional[User]:
+def update_user(db: Session, user_id: int, user_update: UserUpdate) -> Optional[User]:
     """更新用户信息"""
     # 获取用户
     db_user = get_user(db, user_id)
@@ -59,7 +63,7 @@ def update_user(db: Session, user_id: uuid.UUID, user_update: UserUpdate) -> Opt
 
     return db_user
 
-def delete_user(db: Session, user_id: uuid.UUID) -> bool:
+def delete_user(db: Session, user_id: int) -> bool:
     """删除用户"""
     # 获取用户
     db_user = get_user(db, user_id)
@@ -82,17 +86,20 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
     return user
 
 # 角色相关CRUD操作
-def get_role(db: Session, role_id: uuid.UUID) -> Optional[Role]:
+def get_role(db: Session, role_id: int) -> Optional[Role]:
     """根据ID获取角色"""
-    return db.exec(select(Role).where(Role.id == role_id)).first()
+    result = db.execute(select(Role).where(Role.id == role_id))
+    return result.scalars().first()
 
 def get_role_by_name(db: Session, name: str) -> Optional[Role]:
     """根据名称获取角色"""
-    return db.exec(select(Role).where(Role.name == name)).first()
+    result = db.execute(select(Role).where(Role.name == name))
+    return result.scalars().first()
 
 def get_roles(db: Session, skip: int = 0, limit: int = 100) -> List[Role]:
     """获取角色列表"""
-    return db.exec(select(Role).offset(skip).limit(limit)).all()
+    result = db.execute(select(Role).offset(skip).limit(limit))
+    return result.scalars().all()
 
 def create_role(db: Session, name: str, description: Optional[str] = None, permissions: Dict[str, Any] = {}) -> Role:
     """创建新角色"""
@@ -110,7 +117,7 @@ def create_role(db: Session, name: str, description: Optional[str] = None, permi
 
     return db_role
 
-def update_role(db: Session, role_id: uuid.UUID, name: Optional[str] = None, 
+def update_role(db: Session, role_id: int, name: Optional[str] = None,
                 description: Optional[str] = None, permissions: Optional[Dict[str, Any]] = None) -> Optional[Role]:
     """更新角色信息"""
     # 获取角色
@@ -133,7 +140,7 @@ def update_role(db: Session, role_id: uuid.UUID, name: Optional[str] = None,
 
     return db_role
 
-def delete_role(db: Session, role_id: uuid.UUID) -> bool:
+def delete_role(db: Session, role_id: int) -> bool:
     """删除角色"""
     # 获取角色
     db_role = get_role(db, role_id)
@@ -147,7 +154,7 @@ def delete_role(db: Session, role_id: uuid.UUID) -> bool:
     return True
 
 # 用户角色关联操作
-def assign_role_to_user(db: Session, user_id: uuid.UUID, role_id: uuid.UUID) -> bool:
+def assign_role_to_user(db: Session, user_id: int, role_id: int) -> bool:
     """为用户分配角色"""
     # 检查用户和角色是否存在
     user = get_user(db, user_id)
@@ -156,24 +163,25 @@ def assign_role_to_user(db: Session, user_id: uuid.UUID, role_id: uuid.UUID) -> 
         return False
 
     # 检查是否已分配
-    existing_link = db.exec(
+    result = db.execute(
         select(UserRoleLink).where(
             UserRoleLink.user_id == user_id,
             UserRoleLink.role_id == role_id
         )
-    ).first()
+    )
+    existing_link = result.scalars().first()
 
     if existing_link:
         return True  # 已经分配过，视为成功
 
     # 创建新的关联
-    link = UserRoleLink(user_id=user_id, role_id=role_id)
+    link = UserRoleLink()
     db.add(link)
     db.commit()
 
     return True
 
-def remove_role_from_user(db: Session, user_id: uuid.UUID, role_id: uuid.UUID) -> bool:
+def remove_role_from_user(db: Session, user_id: int, role_id: int) -> bool:
     """从用户移除角色"""
     # 检查用户和角色是否存在
     user = get_user(db, user_id)
@@ -182,12 +190,13 @@ def remove_role_from_user(db: Session, user_id: uuid.UUID, role_id: uuid.UUID) -
         return False
 
     # 查找关联
-    link = db.exec(
+    result = db.execute(
         select(UserRoleLink).where(
             UserRoleLink.user_id == user_id,
             UserRoleLink.role_id == role_id
         )
-    ).first()
+    )
+    link = result.scalars().first()
 
     if not link:
         return False  # 未找到关联
@@ -198,7 +207,7 @@ def remove_role_from_user(db: Session, user_id: uuid.UUID, role_id: uuid.UUID) -
 
     return True
 
-def get_user_roles(db: Session, user_id: uuid.UUID) -> List[Role]:
+def get_user_roles(db: Session, user_id: int) -> List[Role]:
     """获取用户的所有角色"""
     user = get_user(db, user_id)
     if not user:
@@ -206,7 +215,7 @@ def get_user_roles(db: Session, user_id: uuid.UUID) -> List[Role]:
 
     return user.roles
 
-def get_role_users(db: Session, role_id: uuid.UUID) -> List[User]:
+def get_role_users(db: Session, role_id: int) -> List[User]:
     """获取拥有特定角色的所有用户"""
     role = get_role(db, role_id)
     if not role:

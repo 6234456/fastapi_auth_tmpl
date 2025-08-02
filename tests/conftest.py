@@ -8,7 +8,12 @@ from app.main import app
 from app.database import get_session
 from app.models.user import User, Role, UserRoleLink
 from app.core.security import get_password_hash
-import uuid
+
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
+from app.models.base import Base
 
 @pytest.fixture(name="session")
 def session_fixture():
@@ -17,7 +22,7 @@ def session_fixture():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    SQLModel.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
 
@@ -35,7 +40,6 @@ def client_fixture(session: Session):
 @pytest.fixture(name="test_user")
 def test_user_fixture(session: Session):
     user = User(
-        id=uuid.uuid4(),
         username="testuser",
         email="test@example.com",
         hashed_password=get_password_hash("testpassword"),
@@ -49,7 +53,6 @@ def test_user_fixture(session: Session):
 @pytest.fixture(name="test_admin")
 def test_admin_fixture(session: Session):
     admin = User(
-        id=uuid.uuid4(),
         username="testadmin",
         email="admin@example.com",
         hashed_password=get_password_hash("adminpassword"),
@@ -64,7 +67,6 @@ def test_admin_fixture(session: Session):
 @pytest.fixture(name="test_role")
 def test_role_fixture(session: Session):
     role = Role(
-        id=uuid.uuid4(),
         name="testrole",
         description="Test Role",
         permissions={"permissions": ["test:permission"]}

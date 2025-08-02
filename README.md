@@ -80,13 +80,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 DATABASE_URL=sqlite:///./sql_app.db
 ```
 
-### 5. 运行数据库迁移
 
-```bash
-alembic upgrade head
-```
-
-### 6. 启动应用
+### 5. 启动应用
 
 ```bash
 uvicorn app.main:app --reload

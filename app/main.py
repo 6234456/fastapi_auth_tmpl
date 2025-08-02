@@ -1,14 +1,13 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import logging
 
+from app.config.settings import settings
 from app.database import create_db_and_tables
-from app.config import settings
 from app.api import auth, users, roles
 from app.crud.user import create_role, assign_role_to_user, create_user, get_role_by_name, get_user_by_username
 from app.schemas.user import UserCreate
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 from app.database import get_session
 from contextlib import asynccontextmanager
 
@@ -23,7 +22,7 @@ async def lifespan(app: FastAPI):
 
     # 初始化默认角色和超级管理员
     try:
-        db = Session(next(get_session.dependencies[0].dependency()))
+        db = next(get_session())
 
         # 创建默认角色
         admin_role = get_role_by_name(db, "admin")
